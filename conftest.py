@@ -9,13 +9,22 @@ def shared_data():
     return {}
 
 @pytest.fixture(scope="session")
-def browser_setup(playwright: Playwright, browser: Browser, shared_data):
+def user_credentials():
+    # Read variables injected by GitHub Actions OR local .env
+    email = os.getenv("APP_EMAIL")
+    password = os.getenv("APP_PASSWORD")
+    if not email or not password:
+        pytest.fail("Missing credentials! Ensure APP_EMAIL and APP_PASSWORD are set.")
+    return {"email": email, "password": password}
+
+@pytest.fixture(scope="session")
+def browser_setup(playwright: Playwright, browser: Browser, shared_data, user_credentials):
     # Creating API Context
     api_context = playwright.request.new_context(base_url=Config.BASE_URL)
     # Login through API
     response = api_context.post(url=APIEndpoints.login_url,
                                 headers={"Content-Type": "application/json"},
-                                data={"userEmail":Config.APP_EMAIL,"userPassword":Config.APP_PASSWORD})
+                                data={"userEmail":user_credentials.get("email"),"userPassword":user_credentials.get("password")})
     if not response.ok:
         raise ValueError(f"API Login failed [{response.status}]: {response.text()}")
     else:
@@ -36,12 +45,4 @@ def browser_setup(playwright: Playwright, browser: Browser, shared_data):
     browser.close()
     api_context.dispose()
 
-@pytest.fixture(scope="session")
-def user_credentials():
-    # Read variables injected by GitHub Actions OR local .env
-    email = os.getenv("APP_EMAIL")
-    password = os.getenv("APP_PASSWORD")
-    if not email or not password:
-        pytest.fail("Missing credentials! Ensure APP_EMAIL and APP_PASSWORD are set.")
-    return {"email": email, "password": password}
 
