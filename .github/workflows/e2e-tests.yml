@@ -37,6 +37,9 @@ jobs:
 
     - name: Execute Tests with Virtual Display (Xvfb)
       # xvfb-run creates a virtual screen so headless=False doesn't crash the CI runner
+      env:
+        APP_EMAIL: ${{ secrets.APP_EMAIL }}
+        APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
       run: |
         xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" pytest
       continue-on-error: true # Ensures artifacts upload even if a test fails
